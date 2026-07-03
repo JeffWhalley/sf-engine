@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #16191d;
+  /* faint brushed-metal striation so panels read as machined surfaces, not flat dark */
+  background-image:
+    radial-gradient(1200px 600px at 70% -10%, rgba(71, 199, 189, 0.05), transparent 60%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.012) 0px,
+      rgba(255, 255, 255, 0.012) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  color: #eceff2;
+  font-family: 'Saira', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  /* Raised machined panel: top light edge, bottom shadow edge. */
+  .panel {
+    @apply rounded-md bg-panel-2;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.55),
+      0 1px 2px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Recessed window (the DRO look): pushed into the surface. */
+  .inset {
+    @apply rounded bg-panel;
+    box-shadow:
+      inset 0 2px 7px rgba(0, 0, 0, 0.75),
+      inset 0 -1px 0 0 rgba(255, 255, 255, 0.03);
+  }
+
+  /* Engraved label: condensed, spaced, dim — like stamped panel text. */
+  .engraved {
+    @apply font-display uppercase tracking-[0.16em] text-ink-3;
+    font-weight: 600;
+  }
+
+  .field-input {
+    @apply w-full rounded bg-machined px-2.5 py-1.5 font-mono text-sm text-ink outline-none transition-colors;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+    border: 1px solid #3a424a;
+  }
+  .field-input:focus {
+    border-color: #47c7bd;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+      0 0 0 1px rgba(71, 199, 189, 0.35);
+  }
+  .field-input.invalid {
+    border-color: #e5594e;
+    box-shadow: 0 0 0 1px rgba(229, 89, 78, 0.35);
+  }
+
+  /* leader dots between a label and its value */
+  .leader::after {
+    content: '';
+    flex: 1 1 auto;
+    margin: 0 0.5rem;
+    border-bottom: 1px dotted #3a424a;
+    transform: translateY(-0.2em);
+  }
+}
+
+/* tabular figures everywhere numbers live */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* range slider — machined track with anodized-teal thumb */
+.sf-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(#0f1216, #1b2026);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+  outline: none;
+}
+.sf-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #6fe0d6, #2c8f87);
+  box-shadow: 0 0 8px rgba(71, 199, 189, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+.sf-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #6fe0d6, #2c8f87);
+  box-shadow: 0 0 8px rgba(71, 199, 189, 0.5);
+  cursor: pointer;
+}
+.sf-slider:focus-visible {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(71, 199, 189, 0.4);
+}
+
+/* Phase 8 T2 — setup sheet printing */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff !important; }
+  .sheet { max-width: none !important; padding: 0 !important; }
+  @page { margin: 0.5in; }
+}

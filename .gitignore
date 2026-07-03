@@ -1,0 +1,13 @@
+# dependencies
+node_modules/
+
+# build output (Vercel/CI builds this itself)
+dist/
+
+# editor/OS noise
+.DS_Store
+Thumbs.db
+*.local
+
+# logs
+npm-debug.log*
