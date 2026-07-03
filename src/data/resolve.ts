@@ -148,6 +148,13 @@ export interface MillingSelection {
    * (warnings still fire), and Max DOC/WOC solve engagement at this feed.
    */
   feedOverride_ipm?: number;
+  /**
+   * With the feed lock: solve RPM so the chip load stays on target instead of
+   * holding SFM-derived RPM. RPM is capped to the material's SFM window
+   * (thermal limit) and the machine's envelope; whatever chip-load error
+   * remains after those caps shows up in the warnings.
+   */
+  holdChipload?: boolean;
 }
 
 /**

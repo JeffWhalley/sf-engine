@@ -51,6 +51,8 @@ export interface CalcState {
   fieldUnits: Record<string, UnitSystem>;
   /** Manual feed lock (in/min canonical); null = automatic feed. */
   feedOverride_ipm: number | null;
+  /** With the feed lock: solve RPM to hold target chip load. */
+  holdChipload: boolean;
   /** Phase 7 T4 — active operation. Material/machine are shared across modes. */
   operation: Operation;
   drill: DrillGeometry;
@@ -71,6 +73,7 @@ export interface CalcState {
   setFieldUnit: (fieldId: string, sys: UnitSystem) => void;
   /** Lock feed to a manual value (in/min); null returns to automatic. */
   setFeedOverride: (v: number | null) => void;
+  setHoldChipload: (v: boolean) => void;
   applyStrategy: (s: CuttingStrategy) => void;
   /** Solve axial depth so motor power ≈ available power (holds WOC). */
   maximizeDoc: () => void;
@@ -105,6 +108,7 @@ export const useCalcStore = create<CalcState>((set, get) => ({
   strategy: 'profile',
   fieldUnits: {},
   feedOverride_ipm: null,
+  holdChipload: false,
   operation: 'milling',
   drill: { diameter_in: 0.25, material: 'hss', holeDepth_in: 0.75 },
   turn: { workpieceDiameter_in: 2.0, op: 'rough', noseRadius_in: 1 / 32 },
@@ -133,6 +137,7 @@ export const useCalcStore = create<CalcState>((set, get) => ({
   setUnitSystem: (s) => set({ unitSystem: s, fieldUnits: {} }), // global toggle resets per-field picks
 
   setFeedOverride: (v) => set({ feedOverride_ipm: v != null && v > 0 ? v : null }),
+  setHoldChipload: (v) => set({ holdChipload: v }),
 
   setFieldUnit: (fieldId, sys) =>
     set((st) => {
@@ -180,6 +185,7 @@ export const useCalcStore = create<CalcState>((set, get) => ({
       turn: s.turn,
       strategy: s.strategy,
       feedOverride_ipm: s.feedOverride_ipm,
+      holdChipload: s.holdChipload,
     };
   },
 
@@ -196,6 +202,7 @@ export const useCalcStore = create<CalcState>((set, get) => ({
       operation: snap.operation ?? 'milling',
       strategy: snap.strategy !== undefined ? snap.strategy : null,
       feedOverride_ipm: snap.feedOverride_ipm ?? null,
+      holdChipload: snap.holdChipload ?? false,
       drill: snap.drill ?? { diameter_in: 0.25, material: 'hss', holeDepth_in: 0.75 },
       turn: snap.turn ?? { workpieceDiameter_in: 2.0, op: 'rough', noseRadius_in: 1 / 32 },
     }),
@@ -224,7 +231,9 @@ export function buildSelection(state: CalcState): MillingSelection {
     ap_in: state.ap_in,
     performance: state.performance,
     hsm: state.strategy === 'hsm',
-    ...(state.feedOverride_ipm != null ? { feedOverride_ipm: state.feedOverride_ipm } : {}),
+    ...(state.feedOverride_ipm != null
+      ? { feedOverride_ipm: state.feedOverride_ipm, holdChipload: state.holdChipload }
+      : {}),
   };
 }
 

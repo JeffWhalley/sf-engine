@@ -20,6 +20,7 @@ const limited: LimitedResult = {
   clampedPower: false,
   demandedPower_hp: 0.94,
   feedLocked: false,
+  rpmSolvedForChipload: false,
   availablePower_hp: machine.maxPower_hp,
   performanceCappedTo: null,
 };

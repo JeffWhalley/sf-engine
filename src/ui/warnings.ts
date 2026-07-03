@@ -98,6 +98,13 @@ export function buildWarnings(limited: LimitedResult, ctx: AdvisoryContext): Adv
     });
   }
 
+  if (limited.rpmSolvedForChipload) {
+    out.push({
+      severity: 'info',
+      message: `RPM solved from your locked feed to hold chip load (${fmt(result.rpm, 0)} rpm, ${fmt(result.sfm, 0)} sfm achieved).`,
+    });
+  }
+
   if (clampedRpm) {
     out.push({
       severity: 'warn',

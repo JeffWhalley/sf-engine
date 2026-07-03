@@ -29,6 +29,8 @@ export interface JobSnapshot {
   strategy?: 'slot' | 'profile' | 'hsm' | null;
   /** Manual feed lock, in/min (null/absent = automatic). */
   feedOverride_ipm?: number | null;
+  /** Solve RPM for chip load under the feed lock. */
+  holdChipload?: boolean;
 }
 
 export interface Job {

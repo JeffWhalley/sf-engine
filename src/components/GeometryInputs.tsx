@@ -111,10 +111,24 @@ export function GeometryInputs() {
         </div>
       </div>
       {state.feedOverride_ipm != null && (
-        <p className="font-mono text-[10px] leading-relaxed text-ink-3">
-          Feed is yours; chip load is derived from it. Use Max DOC / Max WOC below to size the
-          cut to available power, and watch the deflection & chip-load warnings.
-        </p>
+        <>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={state.holdChipload}
+              onChange={(e) => state.setHoldChipload(e.target.checked)}
+              className="accent-[#47c7bd]"
+            />
+            <span className="font-mono text-[11px] text-ink-2">
+              Solve RPM to hold target chip load
+            </span>
+          </label>
+          <p className="font-mono text-[10px] leading-relaxed text-ink-3">
+            {state.holdChipload
+              ? 'RPM follows your feed to keep the chip on target — capped by the material\'s surface-speed window (thermal limit) and the machine. Remaining chip-load error shows in the warnings.'
+              : 'Feed is yours; chip load is derived from it. Use Max DOC / Max WOC below to size the cut to available power, and watch the deflection & chip-load warnings.'}
+          </p>
+        </>
       )}
 
       <div className="flex items-center gap-2">

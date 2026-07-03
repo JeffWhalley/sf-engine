@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   getMaterial, getTool, getMachine, calculateWithLimits, fitEngagement, availablePower,
+  sfmRangeFor,
 } from '../index';
 import { buildWarnings } from '../../ui/warnings';
 import { useCalcStore } from '../../store/useCalcStore';
@@ -88,5 +89,66 @@ describe('store plumbing', () => {
     expect(useCalcStore.getState().feedOverride_ipm).toBe(42);
     useCalcStore.getState().setFeedOverride(0); // invalid → null
     expect(useCalcStore.getState().feedOverride_ipm).toBeNull();
+  });
+});
+
+describe('holdChipload — RPM solved from the locked feed', () => {
+  const sel = { material, tool, ae_in: 0.2, ap_in: 0.5, performance: 50 };
+
+  it('raises RPM so the derived chip load lands on target (fast feed)', () => {
+    const auto = calculateWithLimits(sel, vmc);
+    // stay inside the SFM window's RPM headroom so the solve can fully land
+    const window = sfmRangeFor(material, tool.material);
+    const headroom = window.max / auto.result.sfm;
+    const factor = 1 + (headroom - 1) * 0.75;
+    const locked = calculateWithLimits(
+      { ...sel, feedOverride_ipm: auto.result.feed_ipm * factor, holdChipload: true },
+      vmc,
+    );
+    expect(locked.rpmSolvedForChipload).toBe(true);
+    expect(locked.result.rpm).toBeGreaterThan(auto.result.rpm);
+    // chip load back on the same target (both cuts share ae → same thinning)
+    expect(locked.result.chipload_in).toBeCloseTo(auto.result.chipload_in, 4);
+  });
+
+  it('beyond the window headroom, RPM caps at the thermal limit and chip thickens', () => {
+    const auto = calculateWithLimits(sel, vmc);
+    const locked = calculateWithLimits(
+      { ...sel, feedOverride_ipm: auto.result.feed_ipm * 3, holdChipload: true },
+      { ...vmc, maxFeed_ipm: 5000 },
+    );
+    const window = sfmRangeFor(material, tool.material);
+    expect(locked.result.sfm).toBeLessThanOrEqual(window.max + 1);
+    expect(locked.result.chipload_in).toBeGreaterThan(auto.result.chipload_in);
+  });
+
+  it('caps the solved RPM at the material SFM window (thermal limit)', () => {
+    const insane = calculateWithLimits(
+      { ...sel, feedOverride_ipm: 5000, holdChipload: true },
+      { ...vmc, maxRpm: 100000, maxFeed_ipm: 10000 },
+    );
+    // achieved sfm must not exceed the window max
+    expect(insane.result.sfm).toBeLessThanOrEqual(
+      sfmRangeFor(material, tool.material).max + 1,
+    );
+  });
+
+  it('machine max RPM still wins over the solve', () => {
+    const l = calculateWithLimits(
+      { ...sel, feedOverride_ipm: 200, holdChipload: true },
+      hobby, // 10k rpm ceiling
+    );
+    expect(l.result.rpm).toBeLessThanOrEqual(hobby.maxRpm + 1e-9);
+    expect(l.result.feed_ipm).toBeCloseTo(Math.min(200, hobby.maxFeed_ipm), 6);
+  });
+
+  it('slow locked feed lowers RPM but not below the SFM window floor', () => {
+    const auto = calculateWithLimits(sel, vmc);
+    const slow = calculateWithLimits(
+      { ...sel, feedOverride_ipm: auto.result.feed_ipm * 0.3, holdChipload: true },
+      vmc,
+    );
+    expect(slow.result.rpm).toBeLessThan(auto.result.rpm);
+    expect(slow.result.sfm).toBeGreaterThanOrEqual(sfmRangeFor(material, tool.material).min - 1);
   });
 });

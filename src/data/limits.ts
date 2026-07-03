@@ -10,7 +10,9 @@ import { computeMilling, assessLongTool } from '../engine';
 import type { LongToolAssessment } from '../engine';
 import type { MillingResult } from '../engine';
 import type { Machine } from './types';
-import { resolveMillingInput, type MillingSelection } from './resolve';
+import { resolveMillingInput, sfmRangeFor, HSM_SFM_BOOST, type MillingSelection } from './resolve';
+import { findMfrOverride } from './mfrOverrides';
+import { rpmFromSurfaceSpeed } from '../engine';
 
 /**
  * Available spindle power at a given rpm. Below baseRpm the spindle is
@@ -73,6 +75,8 @@ export interface LimitedResult {
   demandedPower_hp: number;
   /** True when the feed is the user's manual lock. */
   feedLocked: boolean;
+  /** True when RPM was solved from the locked feed to hold chip load. */
+  rpmSolvedForChipload: boolean;
   /** Power available at the clamped rpm, hp. */
   availablePower_hp: number;
   /** Effective performance if rigidity capped it, else null. */
@@ -107,8 +111,26 @@ export function calculateWithLimits(sel: MillingSelection, machine: Machine): Li
   };
   const unclamped = computeMilling(input);
 
+  // --- Optional: solve RPM from the locked feed to hold target chip load ---
+  // rpm = feed / (flutes × fz_target × thinning). Capped to the material's
+  // SFM window on the EFFECTIVE diameter (thermal limit), then the normal
+  // machine clamps below.
+  let rpmSolvedForChipload = false;
+  let solveStartRpm = unclamped.rpm;
+  if (feedLocked && sel.holdChipload) {
+    const rctf = unclamped.radialChipThinningFactor;
+    const dEff = unclamped.effectiveDiameter_in;
+    const idealRpm = sel.feedOverride_ipm! / (input.flutes * input.chipload_in * rctf);
+    const window = findMfrOverride(sel.tool, sel.material)?.sfm ?? sfmRangeFor(sel.material, sel.tool.material);
+    const boost = sel.hsm ? HSM_SFM_BOOST : 1;
+    const rpmFloor = rpmFromSurfaceSpeed(window.min * boost, dEff);
+    const rpmCeil = rpmFromSurfaceSpeed(window.max * boost, dEff);
+    solveStartRpm = Math.min(rpmCeil, Math.max(rpmFloor, idealRpm));
+    rpmSolvedForChipload = true;
+  }
+
   // --- RPM: snap to discrete speeds, then clamp to [minRpm, maxRpm] ---
-  let targetRpm = unclamped.rpm;
+  let targetRpm = solveStartRpm;
   let clampedRpm = false;
   if (machine.discreteRpms && machine.discreteRpms.length > 0) {
     const snapped = nearestDiscrete(machine.discreteRpms, targetRpm);
@@ -125,7 +147,10 @@ export function calculateWithLimits(sel: MillingSelection, machine: Machine): Li
     clampedRpm = true;
   }
 
-  let result = clampedRpm ? computeMilling({ ...input, rpmOverride_rpm: targetRpm }) : unclamped;
+  let result =
+    clampedRpm || rpmSolvedForChipload
+      ? computeMilling({ ...input, rpmOverride_rpm: targetRpm })
+      : unclamped;
 
   // --- Feed: cap to the machine's max table feed ---
   let clampedFeed = false;
@@ -163,6 +188,7 @@ export function calculateWithLimits(sel: MillingSelection, machine: Machine): Li
     clampedPower,
     demandedPower_hp,
     feedLocked,
+    rpmSolvedForChipload,
     availablePower_hp: avail,
     performanceCappedTo,
     longTool,
