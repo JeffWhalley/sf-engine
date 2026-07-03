@@ -3,7 +3,7 @@
 Running checklist. Mirrors `docs/PLAN.md` phases and the status table in
 `CLAUDE.md`. Check items off as they land; keep the test count current.
 
-**Current state: Phases 0–10T1 (+7b, 8.3/8.4, 13b license UI, editors, combobox) COMPLETE · 301 tests passing · `tsc` + `vite build` clean.**
+**Current state: Phases 0–10T1 (+7b, 8.3/8.4, 13b license UI, editors, combobox) COMPLETE · 307 tests passing · `tsc` + `vite build` clean.**
 
 ---
 
@@ -99,6 +99,10 @@ Running checklist. Mirrors `docs/PLAN.md` phases and the status table in
 - [x] T3 CI workflow file in `.github/workflows/ci.yml` (from standalone session)
 - [ ] T2 Hosting (Cloudflare Pages) — **[HUMAN]: account + domain**
 - [ ] T4 Monitoring (Sentry + Plausible/Umami) — **[HUMAN]: accounts**
+
+## Feasibility model (post-testing feedback) ✅
+- [x] Power fit: feed auto-scales so motor load ≤ 90% of available spindle power (`POWER_FIT_TARGET`); readout shows "wanted" value; warning explains
+- [x] Rigidity chip-load derate: light 0.6× / medium 0.85× / rigid 1.0× (`RIGIDITY_FEED_FACTOR`) — **[HUMAN] tune after real-world cuts**
 
 ## Backlog / stretch 🔶
 - [x] Searchable material combobox (`MaterialSelect` is now a keyboard-navigable combobox)

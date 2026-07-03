@@ -17,6 +17,7 @@ const limited: LimitedResult = {
   unclamped: result,
   clampedRpm: false,
   clampedFeed: false,
+  clampedPower: false,
   availablePower_hp: machine.maxPower_hp,
   performanceCappedTo: null,
 };

@@ -81,7 +81,7 @@ export function ResultsPanel({
   sys: UnitSystem;
   warnings: Advisory[];
 }) {
-  const { result, unclamped, clampedRpm, clampedFeed, availablePower_hp } = limited;
+  const { result, unclamped, clampedRpm, clampedFeed, clampedPower, availablePower_hp } = limited;
   const f = formatResult(result, sys);
   const req = formatResult(unclamped, sys);
 
@@ -99,7 +99,7 @@ export function ResultsPanel({
         <Dro
           label="Feed rate"
           reading={f.feed}
-          sub={clampedFeed ? `wanted ${req.feed.value} ${req.feed.unit}` : undefined}
+          sub={clampedFeed || clampedPower ? `wanted ${req.feed.value} ${req.feed.unit}` : undefined}
         />
       </div>
 

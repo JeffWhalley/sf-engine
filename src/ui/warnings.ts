@@ -83,7 +83,7 @@ export function advisories(r: MillingResult, ctx: AdvisoryContext): Advisory[] {
 
 export function buildWarnings(limited: LimitedResult, ctx: AdvisoryContext): Advisory[] {
   const { machine, tool, ap_in, sys } = ctx;
-  const { result, unclamped, clampedRpm, clampedFeed, availablePower_hp, performanceCappedTo } =
+  const { result, unclamped, clampedRpm, clampedFeed, clampedPower, availablePower_hp, performanceCappedTo } =
     limited;
   const out: Advisory[] = [];
 
@@ -109,6 +109,13 @@ export function buildWarnings(limited: LimitedResult, ctx: AdvisoryContext): Adv
     out.push({
       severity: 'warn',
       message: `Feed capped at the machine's ${fmt(machine.maxFeed_ipm, 0)} in/min — chip load is reduced below target.`,
+    });
+  }
+
+  if (clampedPower) {
+    out.push({
+      severity: 'warn',
+      message: `Feed reduced to ${fmt(result.feed_ipm, 1)} in/min (wanted ${fmt(unclamped.feed_ipm, 1)}) to fit the spindle's ${fmt(powerToDisplay(availablePower_hp, sys), 2)} ${powerUnit(sys)} at this RPM. For more MRR, reduce DOC/WOC instead.`,
     });
   }
 

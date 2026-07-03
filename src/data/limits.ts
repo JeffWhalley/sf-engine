@@ -31,6 +31,22 @@ export function capPerformance(performance: number, rigidity?: Machine['rigidity
   return performance; // 'rigid' or unspecified: no cap
 }
 
+/**
+ * Chip-load derating by machine rigidity — light frames chatter long before
+ * they run out of power, so power-fitting alone is not enough. Judgment call
+ * (**[HUMAN] review, standing rule 6**): light 0.6 / medium 0.85 / rigid 1.0.
+ */
+export const RIGIDITY_FEED_FACTOR: Record<NonNullable<Machine['rigidity']>, number> = {
+  light: 0.6,
+  medium: 0.85,
+  rigid: 1.0,
+};
+
+/** Power-fit targets this fraction of available power (headroom for wear/dull tools). */
+export const POWER_FIT_TARGET = 0.9;
+/** Never auto-cut feed below this fraction of the request — past that, re-fixture/re-cut. */
+const POWER_FIT_FLOOR = 0.1;
+
 function nearestDiscrete(rpms: number[], desired: number): number {
   let best = rpms[0];
   let bestDiff = Math.abs(rpms[0] - desired);
@@ -51,6 +67,8 @@ export interface LimitedResult {
   unclamped: MillingResult;
   clampedRpm: boolean;
   clampedFeed: boolean;
+  /** True when feed was auto-reduced to fit available spindle power. */
+  clampedPower: boolean;
   /** Power available at the clamped rpm, hp. */
   availablePower_hp: number;
   /** Effective performance if rigidity capped it, else null. */
@@ -73,14 +91,13 @@ export function calculateWithLimits(sel: MillingSelection, machine: Machine): Li
     shankDiameter_in: sel.tool.shankDiameter_in,
   });
   const resolved = resolveMillingInput({ ...sel, machine, performance: effPerf });
-  const input = longTool.derated
-    ? {
-        ...resolved,
-        sfm: resolved.sfm * longTool.rpmFactor,
-        chipload_in: resolved.chipload_in * longTool.feedFactor,
-        ap_in: resolved.ap_in * longTool.apFactor,
-      }
-    : resolved;
+  const rigidityFactor = RIGIDITY_FEED_FACTOR[machine.rigidity ?? 'rigid'];
+  const input = {
+    ...resolved,
+    sfm: resolved.sfm * longTool.rpmFactor,
+    chipload_in: resolved.chipload_in * longTool.feedFactor * rigidityFactor,
+    ap_in: resolved.ap_in * longTool.apFactor,
+  };
   const unclamped = computeMilling(input);
 
   // --- RPM: snap to discrete speeds, then clamp to [minRpm, maxRpm] ---
@@ -114,12 +131,28 @@ export function calculateWithLimits(sel: MillingSelection, machine: Machine): Li
     clampedFeed = true;
   }
 
+  // --- Power: auto-reduce feed so the cut actually fits the spindle. ---
+  // Motor power is ∝ MRR ∝ feed at fixed rpm/engagement, so a linear scale
+  // lands on target in one step.
+  let clampedPower = false;
+  const avail = availablePower(machine, result.rpm);
+  if (result.motorPower_hp > avail) {
+    const scale = Math.max(POWER_FIT_FLOOR, (avail * POWER_FIT_TARGET) / result.motorPower_hp);
+    result = computeMilling({
+      ...input,
+      rpmOverride_rpm: result.rpm,
+      feedOverride_ipm: result.feed_ipm * scale,
+    });
+    clampedPower = true;
+  }
+
   return {
     result,
     unclamped,
     clampedRpm,
     clampedFeed,
-    availablePower_hp: availablePower(machine, result.rpm),
+    clampedPower,
+    availablePower_hp: avail,
     performanceCappedTo,
     longTool,
   };

@@ -43,14 +43,14 @@ Two docs anchor the work:
 | 10 | Deploy / CI | **T1 PWA DONE** (vite-plugin-pwa, offline shell, update toast); **T3 CI file in place**. T2 hosting + T4 monitoring are [HUMAN]-gated |
 | 13b | Offline licensing | **T1 + client UI DONE, tested** — `lib/licenseFile.ts`, `useLicenseStore`, `LicensePanel`; `lib/licenseKeys.ts` is a PLACEHOLDER public key (**[HUMAN] keygen**); Pro removes the sheet footer |
 
-**Tests: 301 passing across 35 files. `tsc` clean. `vite build` clean.**
+**Tests: 307 passing across 36 files. `tsc` clean. `vite build` clean.**
 
 ## How to verify (do this first when resuming)
 
 ```bash
 cd sf-engine
 npm install
-npm test          # expect: 301 passed
+npm test          # expect: 307 passed
 npm run typecheck # expect: exit 0, no output
 npm run build     # expect: clean Vite build into dist/
 npm run dev       # serve the UI locally (or open dist/index.html)
