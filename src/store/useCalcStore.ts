@@ -49,6 +49,8 @@ export interface CalcState {
   strategy: CuttingStrategy | null;
   /** Backlog — per-field display-unit overrides (field id → unit system). */
   fieldUnits: Record<string, UnitSystem>;
+  /** Manual feed lock (in/min canonical); null = automatic feed. */
+  feedOverride_ipm: number | null;
   /** Phase 7 T4 — active operation. Material/machine are shared across modes. */
   operation: Operation;
   drill: DrillGeometry;
@@ -67,6 +69,8 @@ export interface CalcState {
   setUnitSystem: (s: UnitSystem) => void;
   /** Override one field's display unit; pass the current global system to clear. */
   setFieldUnit: (fieldId: string, sys: UnitSystem) => void;
+  /** Lock feed to a manual value (in/min); null returns to automatic. */
+  setFeedOverride: (v: number | null) => void;
   applyStrategy: (s: CuttingStrategy) => void;
   /** Solve axial depth so motor power ≈ available power (holds WOC). */
   maximizeDoc: () => void;
@@ -100,6 +104,7 @@ export const useCalcStore = create<CalcState>((set, get) => ({
   unitSystem: 'imperial',
   strategy: 'profile',
   fieldUnits: {},
+  feedOverride_ipm: null,
   operation: 'milling',
   drill: { diameter_in: 0.25, material: 'hss', holeDepth_in: 0.75 },
   turn: { workpieceDiameter_in: 2.0, op: 'rough', noseRadius_in: 1 / 32 },
@@ -126,6 +131,8 @@ export const useCalcStore = create<CalcState>((set, get) => ({
   setAp: (v) => set({ ap_in: v, strategy: null }),
   setPerformance: (v) => set({ performance: Math.min(100, Math.max(0, v)) }),
   setUnitSystem: (s) => set({ unitSystem: s, fieldUnits: {} }), // global toggle resets per-field picks
+
+  setFeedOverride: (v) => set({ feedOverride_ipm: v != null && v > 0 ? v : null }),
 
   setFieldUnit: (fieldId, sys) =>
     set((st) => {
@@ -172,6 +179,7 @@ export const useCalcStore = create<CalcState>((set, get) => ({
       drill: s.drill,
       turn: s.turn,
       strategy: s.strategy,
+      feedOverride_ipm: s.feedOverride_ipm,
     };
   },
 
@@ -187,6 +195,7 @@ export const useCalcStore = create<CalcState>((set, get) => ({
       unitSystem: snap.unitSystem,
       operation: snap.operation ?? 'milling',
       strategy: snap.strategy !== undefined ? snap.strategy : null,
+      feedOverride_ipm: snap.feedOverride_ipm ?? null,
       drill: snap.drill ?? { diameter_in: 0.25, material: 'hss', holeDepth_in: 0.75 },
       turn: snap.turn ?? { workpieceDiameter_in: 2.0, op: 'rough', noseRadius_in: 1 / 32 },
     }),
@@ -215,6 +224,7 @@ export function buildSelection(state: CalcState): MillingSelection {
     ap_in: state.ap_in,
     performance: state.performance,
     hsm: state.strategy === 'hsm',
+    ...(state.feedOverride_ipm != null ? { feedOverride_ipm: state.feedOverride_ipm } : {}),
   };
 }
 

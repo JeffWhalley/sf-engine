@@ -142,6 +142,12 @@ export interface MillingSelection {
    * trochoidal toolpath in CAM (UI shows that advisory).
    */
   hsm?: boolean;
+  /**
+   * Manual feed lock, in/min. When set, the feed is the user's number: chip
+   * load is DERIVED from it, rigidity derating and auto power-fit are skipped
+   * (warnings still fire), and Max DOC/WOC solve engagement at this feed.
+   */
+  feedOverride_ipm?: number;
 }
 
 /**

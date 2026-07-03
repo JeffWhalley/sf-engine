@@ -6,6 +6,7 @@ import { fmt } from '../ui/format';
 import type { CuttingStrategy } from '../data';
 import { Field } from './Field';
 import { LengthField } from './LengthField';
+import { NumberField } from './NumberField';
 
 const STRATEGIES: { id: CuttingStrategy; label: string }[] = [
   { id: 'slot', label: 'Slot' },
@@ -86,6 +87,36 @@ export function GeometryInputs() {
         </Field>
       </div>
 
+      <div className="flex items-center justify-between gap-2">
+        <span className="engraved text-[10px]">Manual feed</span>
+        <div className="flex items-center gap-2">
+          {state.feedOverride_ipm != null && (
+            <div className="relative w-28">
+              <NumberFeed />
+            </div>
+          )}
+          <button
+            onClick={() =>
+              state.setFeedOverride(state.feedOverride_ipm != null ? null : 20)
+            }
+            className={`rounded px-2.5 py-1 font-display text-[11px] uppercase tracking-wider transition-colors ${
+              state.feedOverride_ipm != null
+                ? 'bg-accent/20 text-accent'
+                : 'border border-hairline text-ink-3 hover:text-ink'
+            }`}
+            title="Lock the feed to your own number; chip load is derived from it and Max DOC/WOC size the cut to fit"
+          >
+            {state.feedOverride_ipm != null ? 'Locked' : 'Off'}
+          </button>
+        </div>
+      </div>
+      {state.feedOverride_ipm != null && (
+        <p className="font-mono text-[10px] leading-relaxed text-ink-3">
+          Feed is yours; chip load is derived from it. Use Max DOC / Max WOC below to size the
+          cut to available power, and watch the deflection & chip-load warnings.
+        </p>
+      )}
+
       <div className="flex items-center gap-2">
         <span className="engraved text-[10px]">Fit to power</span>
         <button
@@ -104,5 +135,22 @@ export function GeometryInputs() {
         </button>
       </div>
     </div>
+  );
+}
+
+/** Manual-feed input: in/min (imperial) or mm/min (metric); canonical in/min. */
+function NumberFeed() {
+  const feed = useCalcStore((s) => s.feedOverride_ipm)!;
+  const setFeedOverride = useCalcStore((s) => s.setFeedOverride);
+  const sys = useCalcStore((s) => s.unitSystem);
+  const metric = sys === 'metric';
+  return (
+    <NumberField
+      value={metric ? feed * 25.4 : feed}
+      unit={metric ? 'mm/min' : 'in/min'}
+      digits={metric ? 0 : 1}
+      step={metric ? 10 : 1}
+      onCommit={(v) => setFeedOverride(metric ? v / 25.4 : v)}
+    />
   );
 }

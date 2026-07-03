@@ -3,7 +3,7 @@
 Running checklist. Mirrors `docs/PLAN.md` phases and the status table in
 `CLAUDE.md`. Check items off as they land; keep the test count current.
 
-**Current state: Phases 0–10T1 (+7b, 8.3/8.4, 13b license UI, editors, combobox) COMPLETE · 307 tests passing · `tsc` + `vite build` clean.**
+**Current state: Phases 0–10T1 (+7b, 8.3/8.4, 13b license UI, editors, combobox) COMPLETE · 314 tests passing · `tsc` + `vite build` clean.**
 
 ---
 
@@ -103,6 +103,7 @@ Running checklist. Mirrors `docs/PLAN.md` phases and the status table in
 ## Feasibility model (post-testing feedback) ✅
 - [x] Power fit: feed auto-scales so motor load ≤ 90% of available spindle power (`POWER_FIT_TARGET`); readout shows "wanted" value; warning explains
 - [x] Rigidity chip-load derate: light 0.6× / medium 0.85× / rigid 1.0× (`RIGIDITY_FEED_FACTOR`) — **[HUMAN] tune after real-world cuts**
+- [x] Manual feed lock: feed is an entered property (`feedOverride_ipm`); chip load derived from it; auto power-fit & rigidity derate bypassed (warnings stay); Max DOC/WOC solve engagement at the locked feed (via `demandedPower_hp`)
 
 ## Backlog / stretch 🔶
 - [x] Searchable material combobox (`MaterialSelect` is now a keyboard-navigable combobox)

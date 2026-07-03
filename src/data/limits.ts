@@ -69,6 +69,10 @@ export interface LimitedResult {
   clampedFeed: boolean;
   /** True when feed was auto-reduced to fit available spindle power. */
   clampedPower: boolean;
+  /** Motor power the cut ASKS for after rpm/feed clamps, before power-fit. */
+  demandedPower_hp: number;
+  /** True when the feed is the user's manual lock. */
+  feedLocked: boolean;
   /** Power available at the clamped rpm, hp. */
   availablePower_hp: number;
   /** Effective performance if rigidity capped it, else null. */
@@ -91,12 +95,15 @@ export function calculateWithLimits(sel: MillingSelection, machine: Machine): Li
     shankDiameter_in: sel.tool.shankDiameter_in,
   });
   const resolved = resolveMillingInput({ ...sel, machine, performance: effPerf });
-  const rigidityFactor = RIGIDITY_FEED_FACTOR[machine.rigidity ?? 'rigid'];
+  const feedLocked = sel.feedOverride_ipm != null;
+  const rigidityFactor = feedLocked ? 1 : RIGIDITY_FEED_FACTOR[machine.rigidity ?? 'rigid'];
   const input = {
     ...resolved,
     sfm: resolved.sfm * longTool.rpmFactor,
     chipload_in: resolved.chipload_in * longTool.feedFactor * rigidityFactor,
     ap_in: resolved.ap_in * longTool.apFactor,
+    // manual feed lock: chip load is back-solved from the user's feed
+    ...(feedLocked ? { feedOverride_ipm: sel.feedOverride_ipm } : {}),
   };
   const unclamped = computeMilling(input);
 
@@ -133,10 +140,12 @@ export function calculateWithLimits(sel: MillingSelection, machine: Machine): Li
 
   // --- Power: auto-reduce feed so the cut actually fits the spindle. ---
   // Motor power is ∝ MRR ∝ feed at fixed rpm/engagement, so a linear scale
-  // lands on target in one step.
+  // lands on target in one step. Skipped under a manual feed lock: there the
+  // user tunes DOC/WOC instead (Max DOC/WOC solve against demanded power).
   let clampedPower = false;
   const avail = availablePower(machine, result.rpm);
-  if (result.motorPower_hp > avail) {
+  const demandedPower_hp = result.motorPower_hp;
+  if (!feedLocked && result.motorPower_hp > avail) {
     const scale = Math.max(POWER_FIT_FLOOR, (avail * POWER_FIT_TARGET) / result.motorPower_hp);
     result = computeMilling({
       ...input,
@@ -152,6 +161,8 @@ export function calculateWithLimits(sel: MillingSelection, machine: Machine): Li
     clampedRpm,
     clampedFeed,
     clampedPower,
+    demandedPower_hp,
+    feedLocked,
     availablePower_hp: avail,
     performanceCappedTo,
     longTool,
@@ -177,7 +188,8 @@ export function fitEngagement(
   const excessPowerAt = (x: number): number => {
     const trial = varyDoc ? { ...sel, ap_in: x } : { ...sel, ae_in: x };
     const lim = calculateWithLimits(trial, machine);
-    return lim.result.motorPower_hp - lim.availablePower_hp;
+    // demanded (pre-power-fit) power — the fitted result is capped by design
+    return lim.demandedPower_hp - lim.availablePower_hp;
   };
 
   let a = lo;

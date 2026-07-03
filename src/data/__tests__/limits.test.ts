@@ -93,8 +93,10 @@ describe('Phase 5.4 — DOC/WOC balancing to available power', () => {
     const { ap_in } = fitEngagement(sel, HOBBY, 'woc');
     const lim = calculateWithLimits({ ...sel, ap_in }, HOBBY);
     const atBound = Math.abs(ap_in - STEEL.fluteLength_in) < 1e-3;
+    // demandedPower is the pre-power-fit ask — the fitted result is capped at
+    // POWER_FIT_TARGET by design, so the solver is judged on demand vs available.
     const nearPower =
-      Math.abs(lim.result.motorPower_hp - lim.availablePower_hp) / lim.availablePower_hp < 0.05;
+      Math.abs(lim.demandedPower_hp - lim.availablePower_hp) / lim.availablePower_hp < 0.05;
     expect(atBound || nearPower).toBe(true);
     expect(ap_in).toBeGreaterThan(sel.ap_in); // it opened the cut up
   });

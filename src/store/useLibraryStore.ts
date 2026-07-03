@@ -27,6 +27,8 @@ export interface JobSnapshot {
   turn?: { workpieceDiameter_in: number; op: 'rough' | 'finish'; noseRadius_in: number };
   /** Phase 8 T4 — engagement preset in effect (null = manually edited). */
   strategy?: 'slot' | 'profile' | 'hsm' | null;
+  /** Manual feed lock, in/min (null/absent = automatic). */
+  feedOverride_ipm?: number | null;
 }
 
 export interface Job {
