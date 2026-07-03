@@ -44,9 +44,13 @@ interface Persisted {
   userTools: Tool[];
   userMachines: Machine[];
   jobs: Job[];
+  /** Per-kind last-modified (ms) — drives cloud sync last-write-wins. */
+  modifiedAt?: { tool: number; machine: number; job: number };
 }
 
 interface LibraryState extends Persisted {
+  /** Required at runtime (Persisted keeps it optional for old saved data). */
+  modifiedAt: { tool: number; machine: number; job: number };
   saveTool: (tool: Tool) => void;
   deleteTool: (id: string) => void;
   saveMachine: (machine: Machine) => void;
@@ -56,12 +60,15 @@ interface LibraryState extends Persisted {
   exportJSON: () => string;
   importJSON: (json: string) => { ok: boolean; error?: string };
   clearAll: () => void;
+  /** Cloud sync: replace one kind's data with a newer remote copy. */
+  adoptRemote: (kind: 'tool' | 'machine' | 'job', payload: unknown, updatedAt: number) => void;
 }
 
 const KEY = 'library';
 
-function load(): Persisted {
-  return storage.getJSON<Persisted>(KEY, { userTools: [], userMachines: [], jobs: [] });
+function load(): Required<Persisted> {
+  const p = storage.getJSON<Persisted>(KEY, { userTools: [], userMachines: [], jobs: [] });
+  return { ...p, modifiedAt: p.modifiedAt ?? { tool: 0, machine: 0, job: 0 } };
 }
 function persist(p: Persisted): void {
   storage.setJSON(KEY, p);
@@ -78,37 +85,42 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   saveTool: (tool) =>
     set((s) => {
       const userTools = [...s.userTools.filter((t) => t.id !== tool.id), tool];
-      persist({ userTools, userMachines: s.userMachines, jobs: s.jobs });
-      return { userTools };
+      const modifiedAt = { ...s.modifiedAt, tool: Date.now() };
+      persist({ userTools, userMachines: s.userMachines, jobs: s.jobs, modifiedAt });
+      return { userTools, modifiedAt };
     }),
 
   deleteTool: (id) =>
     set((s) => {
       const userTools = s.userTools.filter((t) => t.id !== id);
-      persist({ userTools, userMachines: s.userMachines, jobs: s.jobs });
-      return { userTools };
+      const modifiedAt = { ...s.modifiedAt, tool: Date.now() };
+      persist({ userTools, userMachines: s.userMachines, jobs: s.jobs, modifiedAt });
+      return { userTools, modifiedAt };
     }),
 
   saveMachine: (machine) =>
     set((s) => {
       const userMachines = [...s.userMachines.filter((m) => m.id !== machine.id), machine];
-      persist({ userTools: s.userTools, userMachines, jobs: s.jobs });
-      return { userMachines };
+      const modifiedAt = { ...s.modifiedAt, machine: Date.now() };
+      persist({ userTools: s.userTools, userMachines, jobs: s.jobs, modifiedAt });
+      return { userMachines, modifiedAt };
     }),
 
   deleteMachine: (id) =>
     set((s) => {
       const userMachines = s.userMachines.filter((m) => m.id !== id);
-      persist({ userTools: s.userTools, userMachines, jobs: s.jobs });
-      return { userMachines };
+      const modifiedAt = { ...s.modifiedAt, machine: Date.now() };
+      persist({ userTools: s.userTools, userMachines, jobs: s.jobs, modifiedAt });
+      return { userMachines, modifiedAt };
     }),
 
   saveJob: (name, snapshot) => {
     const job: Job = { id: uid('job'), name: name.trim() || 'Untitled', savedAt: Date.now(), snapshot };
     set((s) => {
       const jobs = [...s.jobs, job];
-      persist({ userTools: s.userTools, userMachines: s.userMachines, jobs });
-      return { jobs };
+      const modifiedAt = { ...s.modifiedAt, job: Date.now() };
+      persist({ userTools: s.userTools, userMachines: s.userMachines, jobs, modifiedAt });
+      return { jobs, modifiedAt };
     });
     return job.id;
   },
@@ -116,8 +128,24 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   deleteJob: (id) =>
     set((s) => {
       const jobs = s.jobs.filter((j) => j.id !== id);
-      persist({ userTools: s.userTools, userMachines: s.userMachines, jobs });
-      return { jobs };
+      const modifiedAt = { ...s.modifiedAt, job: Date.now() };
+      persist({ userTools: s.userTools, userMachines: s.userMachines, jobs, modifiedAt });
+      return { jobs, modifiedAt };
+    }),
+
+  /** Cloud sync (Phase 11): apply a newer remote blob without re-bumping time. */
+  adoptRemote: (kind, payload, updatedAt) =>
+    set((s) => {
+      const modifiedAt = { ...s.modifiedAt, [kind]: updatedAt };
+      const patch =
+        kind === 'tool'
+          ? { userTools: payload as Tool[] }
+          : kind === 'machine'
+            ? { userMachines: payload as Machine[] }
+            : { jobs: payload as Job[] };
+      const next = { userTools: s.userTools, userMachines: s.userMachines, jobs: s.jobs, ...patch, modifiedAt };
+      persist(next);
+      return { ...patch, modifiedAt };
     }),
 
   exportJSON: () => {
@@ -131,8 +159,10 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       const userTools = Array.isArray(data.userTools) ? data.userTools : [];
       const userMachines = Array.isArray(data.userMachines) ? data.userMachines : [];
       const jobs = Array.isArray(data.jobs) ? data.jobs : [];
-      persist({ userTools, userMachines, jobs });
-      set({ userTools, userMachines, jobs });
+      const now = Date.now();
+      const modifiedAt = { tool: now, machine: now, job: now };
+      persist({ userTools, userMachines, jobs, modifiedAt });
+      set({ userTools, userMachines, jobs, modifiedAt });
       return { ok: true };
     } catch {
       return { ok: false, error: 'Could not parse JSON.' };

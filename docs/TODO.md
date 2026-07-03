@@ -3,7 +3,7 @@
 Running checklist. Mirrors `docs/PLAN.md` phases and the status table in
 `CLAUDE.md`. Check items off as they land; keep the test count current.
 
-**Current state: Phases 0–10T1 (+7b, 8.3/8.4, 13b license UI, editors, combobox) COMPLETE · 319 tests passing · `tsc` + `vite build` clean.**
+**Current state: Phases 0–10T1 (+7b, 8.3/8.4, 13b license UI, editors, combobox) COMPLETE · 334 tests passing · `tsc` + `vite build` clean.**
 
 ---
 
@@ -105,6 +105,14 @@ Running checklist. Mirrors `docs/PLAN.md` phases and the status table in
 - [x] Rigidity chip-load derate: light 0.6× / medium 0.85× / rigid 1.0× (`RIGIDITY_FEED_FACTOR`) — **[HUMAN] tune after real-world cuts**
 - [x] Hold-chip-load option under the feed lock: RPM solved from feed (`holdChipload`), capped by material SFM window (thermal) + machine envelope; info advisory shows solved rpm/sfm
 - [x] Manual feed lock: feed is an entered property (`feedOverride_ipm`); chip load derived from it; auto power-fit & rigidity derate bypassed (warnings stay); Max DOC/WOC solve engagement at the locked feed (via `demandedPower_hp`)
+
+## Phase 11/12 — backend groundwork (repo side) ✅
+- [x] T5 `useEntitlement()` — single gating point (license file > cloud > free); SetupSheet gates through it
+- [x] T3 Schema + RLS migration (`supabase/migrations/0001_init.sql`): profiles/entitlements/libraries/shared_recipes/webhook_events, free-limit trigger, GDPR cascade
+- [x] T4 Sync core (`lib/sync.ts`: LWW merge, reconcile, 2s debounced pusher — tested) + env-gated Supabase adapter (`lib/cloudStore.ts`, dormant without keys) + library `modifiedAt` tracking
+- [x] 12 T2 Webhook processor (`lib/webhookCore.ts` — idempotent, tested) + Edge Function skeleton (needs [HUMAN] provider wiring)
+- [ ] **[HUMAN] runbook: `docs/BACKEND.md`** (Supabase project, env keys, keygen, merchant)
+- [ ] Sign-in UI + sync status indicator (once keys exist to test against)
 
 ## Backlog / stretch 🔶
 - [x] Searchable material combobox (`MaterialSelect` is now a keyboard-navigable combobox)

@@ -43,14 +43,14 @@ Two docs anchor the work:
 | 10 | Deploy / CI | **T1 PWA DONE** (vite-plugin-pwa, offline shell, update toast); **T3 CI file in place**. T2 hosting + T4 monitoring are [HUMAN]-gated |
 | 13b | Offline licensing | **T1 + client UI DONE, tested** — `lib/licenseFile.ts`, `useLicenseStore`, `LicensePanel`; `lib/licenseKeys.ts` is a PLACEHOLDER public key (**[HUMAN] keygen**); Pro removes the sheet footer |
 
-**Tests: 319 passing across 37 files. `tsc` clean. `vite build` clean.**
+**Tests: 334 passing across 40 files. `tsc` clean. `vite build` clean.**
 
 ## How to verify (do this first when resuming)
 
 ```bash
 cd sf-engine
 npm install
-npm test          # expect: 319 passed
+npm test          # expect: 334 passed
 npm run typecheck # expect: exit 0, no output
 npm run build     # expect: clean Vite build into dist/
 npm run dev       # serve the UI locally (or open dist/index.html)
@@ -151,7 +151,7 @@ const result = calculate({ material, tool, machine, ae_in, ap_in, performance: 5
 - All seed numbers are conservative **starting points**, not manufacturer data.
   Precise data comes via the Phase 8 override path.
 
-## Next action ([HUMAN] gates, then Phase 11–13)
+## Next action ([HUMAN] gates — see docs/BACKEND.md — then Phase 13 Tauri)
 
 Everything repo-side through Phase 10 T1 is complete and tested (incl. PWA,
 copy-results, material combobox, full tool/machine editors, per-field units,

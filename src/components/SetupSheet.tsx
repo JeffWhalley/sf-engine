@@ -9,7 +9,7 @@ import {
 import { resolveMachine } from '../store/useLibraryStore';
 import { buildWarnings } from '../ui/warnings';
 import { buildShareUrl } from '../lib/appShare';
-import { useLicenseStore, isPro } from '../store/useLicenseStore';
+import { useEntitlement } from '../store/useEntitlement';
 import {
   formatResult, formatDrillingResult, formatTurningResult, lengthToDisplay, lengthUnit, fmt,
 } from '../ui/format';
@@ -43,7 +43,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
  */
 export function SetupSheet({ onBack }: { onBack: () => void }) {
   const state = useCalcStore();
-  const pro = isPro(useLicenseStore());
+  const pro = useEntitlement().paid;
   const sys = state.unitSystem;
   const u = lengthUnit(sys);
   const material = getMaterial(state.materialId)!;
