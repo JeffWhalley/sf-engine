@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useCalcStore, buildSelection, buildDrillingSelection, buildTurningSelection, effectiveTool } from './store/useCalcStore';
+import { resolveMachine } from './store/useLibraryStore';
 import { useLicenseStore } from './store/useLicenseStore';
 import { calculateWithLimits, calculateDrilling, calculateTurning, activeMfrOverride, getMachine, type LimitedResult } from './data';
 import type { DrillingResult, TurningResult } from './engine';
@@ -83,7 +84,8 @@ export default function App() {
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(done, done);
     else done();
   };
-  const machine = getMachine(state.machineId)!;
+  // resolveMachine knows user-library machines too; getMachine only knows seeds.
+  const machine = resolveMachine(state.machineId) ?? getMachine('mill-vmc-20hp')!;
   const selection = useMemo(
     () => buildSelection(state),
     // eslint-disable-next-line react-hooks/exhaustive-deps

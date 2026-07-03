@@ -97,3 +97,26 @@ describe('Backlog — per-field unit selection', () => {
     useCalcStore.getState().setUnitSystem('imperial');
   });
 });
+
+describe('regression — app renders with a user-library machine selected', () => {
+  it('saving a custom machine and selecting it does not blank the page', async () => {
+    const { default: App } = await import('../../App');
+    const machine = {
+      ...useLibraryStore.getState().userMachines[0] ?? {
+        id: 'machine:test-custom',
+        name: 'My Custom Mill',
+        maxRpm: 8000, minRpm: 100, maxPower_hp: 5, efficiency: 0.8, maxFeed_ipm: 200,
+      },
+      id: 'machine:test-custom',
+      name: 'My Custom Mill',
+    };
+    useLibraryStore.getState().saveMachine(machine);
+    useCalcStore.getState().setMachine('machine:test-custom');
+    render(<App />);
+    // Results panel renders (page not blank) and shows the custom machine's specs
+    expect(screen.getByText('Recommended')).toBeInTheDocument();
+    expect(screen.getAllByText(/my custom mill/i).length).toBeGreaterThan(0);
+    useLibraryStore.getState().deleteMachine('machine:test-custom');
+    useCalcStore.getState().setMachine('mill-vmc-20hp');
+  });
+});
