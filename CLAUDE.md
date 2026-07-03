@@ -43,14 +43,14 @@ Two docs anchor the work:
 | 10 | Deploy / CI | **T1 PWA DONE** (vite-plugin-pwa, offline shell, update toast); **T3 CI file in place**. T2 hosting + T4 monitoring are [HUMAN]-gated |
 | 13b | Offline licensing | **T1 + client UI DONE, tested** — `lib/licenseFile.ts`, `useLicenseStore`, `LicensePanel`; `lib/licenseKeys.ts` is a PLACEHOLDER public key (**[HUMAN] keygen**); Pro removes the sheet footer |
 
-**Tests: 334 passing across 40 files. `tsc` clean. `vite build` clean.**
+**Tests: 343 passing across 40 files. `tsc` clean. `vite build` clean.**
 
 ## How to verify (do this first when resuming)
 
 ```bash
 cd sf-engine
 npm install
-npm test          # expect: 334 passed
+npm test          # expect: 343 passed
 npm run typecheck # expect: exit 0, no output
 npm run build     # expect: clean Vite build into dist/
 npm run dev       # serve the UI locally (or open dist/index.html)
@@ -86,7 +86,7 @@ sf-engine/
     __tests__/           # incl. vectors.ts (golden regression rows)
   src/data/              # Phase 2 — data + resolver
     types.ts             # Material, Tool, Machine, Coating, IsoGroup
-    materials.ts         # 11 materials (getMaterial, searchMaterials, MATERIALS)
+    materials.ts         # 20 materials incl. 9 plastics/composites (getMaterial, searchMaterials)
     tools.ts             # 8 tools (getTool, TOOLS)
     machines.ts          # 4 machines (getMachine, MACHINES)
     resolve.ts           # pickSFM, pickChipload, suggestEngagement,

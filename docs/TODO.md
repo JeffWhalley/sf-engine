@@ -3,7 +3,7 @@
 Running checklist. Mirrors `docs/PLAN.md` phases and the status table in
 `CLAUDE.md`. Check items off as they land; keep the test count current.
 
-**Current state: Phases 0–10T1 (+7b, 8.3/8.4, 13b license UI, editors, combobox) COMPLETE · 334 tests passing · `tsc` + `vite build` clean.**
+**Current state: Phases 0–10T1 (+7b, 8.3/8.4, 13b license UI, editors, combobox) COMPLETE · 343 tests passing · `tsc` + `vite build` clean.**
 
 ---
 
@@ -23,7 +23,7 @@ Running checklist. Mirrors `docs/PLAN.md` phases and the status table in
 
 ## Phase 2 — Data layer (`src/data/`) ✅
 - [x] `types.ts` (Material, Tool, Machine, Coating)
-- [x] `materials.ts` — 11 materials (SFM windows, chipload tables, unit power)
+- [x] `materials.ts` — 20 materials: 11 metals + 9 plastics/composites (Delrin, HDPE, UHMW, Nylon, acrylic, PTFE, PEEK, ABS, G-10) — **[HUMAN] review plastic values**
 - [x] `tools.ts` — 8 tools; `machines.ts` — 4 machines
 - [x] `resolve.ts` — `pickSFM`, `pickChipload`, `suggestEngagement`,
       `resolveMillingInput`, `calculate`
