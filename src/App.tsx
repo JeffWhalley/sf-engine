@@ -97,6 +97,8 @@ export default function App() {
       state.ae_in,
       state.ap_in,
       state.performance,
+      state.strategy, // hsm flag lives on the selection
+      state.feedOverride_ipm, // manual feed lock
     ],
   );
 
